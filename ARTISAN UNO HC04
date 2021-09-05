@@ -3,12 +3,17 @@
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4, 5); // RX, TX TADINYA 7,8
 
-word au16data[16] = {3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
-//uint16_t au16data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
+//word au16data[16] = {3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
+uint16_t au16data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
 
+/**
+    arduino uno by refandarkway
+    28 AUG 20
+
+*/
 Modbus slave(1, mySerial, 0); // this is slave @1 and RS-232 or USB-FTDI
 
-int thermoDO = 6;//GANTI 
+int thermoDO = 6;//GANTI
 int thermoCS = 7;//GANTI
 int thermoCLK = 8;//GANTI
 
@@ -17,66 +22,43 @@ int thermoCS2 = 11;//GANTI
 int thermoCLK2 = 12;//GANTI
 MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
 MAX6675 thermocouple2(thermoCLK2, thermoCS2, thermoDO2);
-int Burner = 1;
+int burner = 1;
 
 int drum = 2;
 int blower = 3;
+int  etc = 9;
 //int burner = 13;
 //int agitator = 5;
 
 int led_internal = 13; // led shows dutycycle of burner signal
 void setup() {
   mySerial.begin(9600);
-
-   slave.start();
+  //slave.begin( 19200);
+  slave.start();
   // use Arduino pins
-  pinMode(Burner, OUTPUT);
+  pinMode(burner, OUTPUT);
   pinMode(led_internal, OUTPUT);
-  // pinMode(led_external, OUTPUT);
-
-  //int drum = 0;
-  //int blower = 1;
-  //int burner = 4;
-  //int agitator = 5;
-
   pinMode(drum, OUTPUT);
   pinMode(blower, OUTPUT);
-  //  pinMode(burner, OUTPUT);
-  // pinMode(agitator, OUTPUT);
-
-  digitalWrite(drum, HIGH);
+  pinMode(etc, OUTPUT);
+  digitalWrite(etc, HIGH);
+  digitalWrite(burner, HIGH);
   digitalWrite(blower, HIGH);
+  digitalWrite(drum, HIGH);
 
-  //au16data[2] = 0;//ET
-  // au16data[3] = 0;//BT
-  //   au16data[4] = 0;//LED
-  //au16data[5] = 0;//DRUM
-  //au16data[6] = 0;//BLOWER
 
-  delay(500);
+  au16data[2] = 0;//ET
+  au16data[3] = 0;//BT
+  au16data[4] = 0;//LED
+  au16data[5] = 0;//DRUM
+  au16data[6] = 0;//BLOWER
+
+  delay(5);
 }
 void loop() {
-  //au16data[2] = (word) (((thermocouple.readCelsius() / 1.7448) + 4.8) * 100); //
-  // au16data[3] = (word) (((thermocouple2.readCelsius() / 1.7448) + 4.8) * 100); //
-  // slave.poll( au16data, 16 ); // Read modbus registers.
-  // for (int i = 1; i <= 99; i++) {
-  //  if (i <= au16data[4])
-  // digitalWrite(led_internal, HIGH);
-  // else
-  //  digitalWrite(led_internal, LOW);
-  //}
-  // delay(5);
   //mySerial.flush();
-   if( au16data[5]==1 ){
-  digitalWrite(drum, LOW);
-  digitalWrite(led_internal, LOW);}
-   else
-    digitalWrite(drum, HIGH);
-   if (au16data[6]==1 )
-    digitalWrite(blower, LOW);
-   else
-    digitalWrite(blower, HIGH);
 
+  /////start here
   if (mySerial.available()) {
     String command = mySerial.readStringUntil('\n');
 
@@ -95,17 +77,62 @@ void loop() {
       mySerial.flush();
     }
 
-    if (command =="#11") {
-      digitalWrite(blower, LOW);
-      digitalWrite(led_internal, LOW);
+
+
+    else if (command == "#BURNON") {
+      digitalWrite(burner, LOW);
+      digitalWrite(led_internal, HIGH);
+      mySerial.flush();
+    }
+    else if (command == "#BURNOFF") {
+      digitalWrite(burner, HIGH);
+      //digitalWrite(led_internal, LOW);
+      mySerial.flush();
     }
 
-    else if (command == "#12" ) {
-      digitalWrite(blower, HIGH);
-      digitalWrite(led_internal, HIGH     );
+    else if (command == "#DRUMON") {
+      digitalWrite(drum, LOW);
+      digitalWrite(led_internal, HIGH);
+      mySerial.flush();
     }
+    else if (command == "#DRUMOFF") {
+      digitalWrite(drum, HIGH);
+      digitalWrite(led_internal, LOW);
+      mySerial.flush();
+    }
+
+    else if (command == "#BLOWON") {
+      digitalWrite(blower, LOW);
+      //digitalWrite(led_internal, HIGH);
+      mySerial.flush();
+    }
+    else if (command == "#BLOWOFF") {
+      digitalWrite(blower, HIGH);
+      //digitalWrite(led_internal, LOW);
+      mySerial.flush();
+    }
+
+    else if (command == "#ETCON") {
+      digitalWrite(etc, LOW);
+      // digitalWrite(led_internal, HIGH);
+      mySerial.flush();
+    }
+    else if (command == "#ETCOFF") {
+      digitalWrite(etc, HIGH);
+      // digitalWrite(led_internal, LOW);
+      mySerial.flush();
+    }
+
+
 
   }
 
 
+
 }
+
+
+
+
+
+
