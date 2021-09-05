@@ -1,0 +1,111 @@
+#include <max6675.h>
+#include "ModbusRtu.h"
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(4, 5); // RX, TX TADINYA 7,8
+
+word au16data[16] = {3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
+//uint16_t au16data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
+
+Modbus slave(1, mySerial, 0); // this is slave @1 and RS-232 or USB-FTDI
+
+int thermoDO = 6;//GANTI 
+int thermoCS = 7;//GANTI
+int thermoCLK = 8;//GANTI
+
+int thermoDO2 = 10;//GANTI
+int thermoCS2 = 11;//GANTI
+int thermoCLK2 = 12;//GANTI
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
+MAX6675 thermocouple2(thermoCLK2, thermoCS2, thermoDO2);
+int Burner = 1;
+
+int drum = 2;
+int blower = 3;
+//int burner = 13;
+//int agitator = 5;
+
+int led_internal = 13; // led shows dutycycle of burner signal
+void setup() {
+  mySerial.begin(9600);
+
+   slave.start();
+  // use Arduino pins
+  pinMode(Burner, OUTPUT);
+  pinMode(led_internal, OUTPUT);
+  // pinMode(led_external, OUTPUT);
+
+  //int drum = 0;
+  //int blower = 1;
+  //int burner = 4;
+  //int agitator = 5;
+
+  pinMode(drum, OUTPUT);
+  pinMode(blower, OUTPUT);
+  //  pinMode(burner, OUTPUT);
+  // pinMode(agitator, OUTPUT);
+
+  digitalWrite(drum, HIGH);
+  digitalWrite(blower, HIGH);
+
+  //au16data[2] = 0;//ET
+  // au16data[3] = 0;//BT
+  //   au16data[4] = 0;//LED
+  //au16data[5] = 0;//DRUM
+  //au16data[6] = 0;//BLOWER
+
+  delay(500);
+}
+void loop() {
+  //au16data[2] = (word) (((thermocouple.readCelsius() / 1.7448) + 4.8) * 100); //
+  // au16data[3] = (word) (((thermocouple2.readCelsius() / 1.7448) + 4.8) * 100); //
+  // slave.poll( au16data, 16 ); // Read modbus registers.
+  // for (int i = 1; i <= 99; i++) {
+  //  if (i <= au16data[4])
+  // digitalWrite(led_internal, HIGH);
+  // else
+  //  digitalWrite(led_internal, LOW);
+  //}
+  // delay(5);
+  //mySerial.flush();
+   if( au16data[5]==1 ){
+  digitalWrite(drum, LOW);
+  digitalWrite(led_internal, LOW);}
+   else
+    digitalWrite(drum, HIGH);
+   if (au16data[6]==1 )
+    digitalWrite(blower, LOW);
+   else
+    digitalWrite(blower, HIGH);
+
+  if (mySerial.available()) {
+    String command = mySerial.readStringUntil('\n');
+
+    if (command.startsWith("CHAN") || command.startsWith("UNIT") || command.startsWith("FILT")) {
+      mySerial.println("#");
+      mySerial.flush();
+      return;
+    }
+    else if (command == "READ") {
+
+      double cet = thermocouple.readCelsius();
+      double cbt = thermocouple2.readCelsius();
+
+      mySerial.println("0," + String(cet) + "," + String(cbt));
+      mySerial.print("0," + String(cet) + "," + String(cbt));
+      mySerial.flush();
+    }
+
+    if (command =="#11") {
+      digitalWrite(blower, LOW);
+      digitalWrite(led_internal, LOW);
+    }
+
+    else if (command == "#12" ) {
+      digitalWrite(blower, HIGH);
+      digitalWrite(led_internal, HIGH     );
+    }
+
+  }
+
+
+}
